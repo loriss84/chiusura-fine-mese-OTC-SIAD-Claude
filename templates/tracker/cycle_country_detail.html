@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ cycle.period }} – {{ country.code }} – Close Tracker{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cycle_list' %}">Cycles</a></li>
+    <li class="breadcrumb-item active">{{ cycle.period }} / {{ country.code }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h2><i class="bi bi-flag text-primary"></i> {{ country.name }} ({{ country.code }})</h2>
+    <p class="text-muted mb-0">
+      Cycle <strong>{{ cycle.period }}</strong> &mdash;
+      Final deadline: <strong>{{ cycle.final_deadline }}</strong> &mdash;
+      Status: <span class="badge bg-secondary">{{ cycle.status }}</span>
+    </p>
+  </div>
+  {% if is_hq_user %}
+  <a href="{% url 'export_csv' cycle.id %}" class="btn btn-sm btn-outline-success">
+    <i class="bi bi-download"></i> Export
+  </a>
+  {% endif %}
+</div>
+
+{% regroup process_runs by process_template.macro.name as macro_groups %}
+
+{% for macro_group in macro_groups %}
+<div class="card mb-3">
+  <div class="card-header fw-semibold bg-dark text-white">
+    <i class="bi bi-layers"></i> {{ macro_group.grouper }}
+  </div>
+  <div class="card-body p-0">
+    {% for pr in macro_group.list %}
+    <div class="border-bottom p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          <span class="fw-semibold">{{ pr.process_template.name }}</span>
+          {% if pr.process_template.is_gating %}
+          <span class="badge bg-warning text-dark ms-1" title="Gating process">GATING</span>
+          {% endif %}
+          {% if pr.owner_user %}
+          <small class="text-muted ms-2"><i class="bi bi-person"></i> {{ pr.owner_user.get_full_name|default:pr.owner_user.username }}</small>
+          {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="progress" style="width: 120px;" title="{{ pr.completion_percent }}%">
+            <div class="progress-bar {% if pr.status == 'DONE' %}bg-success{% elif pr.status == 'BLOCKED' %}bg-danger{% else %}bg-primary{% endif %}"
+                 style="width: {{ pr.completion_percent }}%"></div>
+          </div>
+          <span class="small">{{ pr.completion_percent }}%</span>
+          <span class="badge badge-{{ pr.status }} text-white">{{ pr.get_status_display }}</span>
+        </div>
+      </div>
+
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Due (calculated)</th>
+            <th>Due (effective)</th>
+            <th>Owner</th>
+            <th>Comment</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tr in pr.task_runs.all %}
+          <tr {% if tr.is_overdue %}class="overdue-row"{% endif %}>
+            <td>
+              {{ tr.task_template.name }}
+              {% if tr.task_template.requires_evidence %}
+              <i class="bi bi-paperclip text-muted" title="Evidence required"></i>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-{{ tr.status }} text-white">{{ tr.get_status_display }}</span>
+            </td>
+            <td>{{ tr.due_date_calculated }}</td>
+            <td>
+              {{ tr.effective_due_date }}
+              {% if tr.due_date_override %}
+              <i class="bi bi-pencil-fill text-warning ms-1" title="Override: {{ tr.override_reason }}"></i>
+              {% endif %}
+              {% if tr.is_overdue %}
+              <i class="bi bi-exclamation-triangle-fill text-danger ms-1"></i>
+              {% endif %}
+            </td>
+            <td>{{ tr.owner_user.username|default:"—" }}</td>
+            <td class="text-muted small" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              {{ tr.last_comment|default:"" }}
+            </td>
+            <td>
+              <a href="{% url 'task_detail' tr.id %}" class="btn btn-xs btn-sm btn-outline-primary py-0">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-muted">No tasks.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="alert alert-secondary">No processes found for this country/cycle.</div>
+{% endfor %}
+{% endblock %}

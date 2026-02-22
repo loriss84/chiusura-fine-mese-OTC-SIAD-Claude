@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ country.code }} Dashboard – Close Tracker{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2><i class="bi bi-flag text-primary"></i> {{ country.name }} ({{ country.code }})</h2>
+    {% if accessible_countries.count > 1 %}
+    <div class="d-flex gap-2 flex-wrap">
+      {% for c in accessible_countries %}
+      <a href="{% url 'country_dashboard_code' c.code %}"
+         class="btn btn-sm {% if c.code == country.code %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        {{ c.code }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if active_cycle %}
+  <div class="text-end">
+    <div class="text-muted small">Active Cycle</div>
+    <strong>{{ active_cycle.period }}</strong> · deadline {{ active_cycle.final_deadline }}
+  </div>
+  {% endif %}
+</div>
+
+{% if active_cycle %}
+{% regroup process_runs by process_template.macro.name as macro_groups %}
+
+{% for macro_group in macro_groups %}
+<div class="card mb-3">
+  <div class="card-header fw-semibold bg-dark text-white">
+    <i class="bi bi-layers"></i> {{ macro_group.grouper }}
+  </div>
+  <div class="card-body p-0">
+    {% for pr in macro_group.list %}
+    <div class="border-bottom p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <span class="fw-semibold">{{ pr.process_template.name }}</span>
+          {% if pr.owner_user %}
+          <small class="text-muted ms-2"><i class="bi bi-person"></i> {{ pr.owner_user.get_full_name|default:pr.owner_user.username }}</small>
+          {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="progress" style="width: 100px;" title="{{ pr.completion_percent }}%">
+            <div class="progress-bar {% if pr.status == 'DONE' %}bg-success{% elif pr.status == 'BLOCKED' %}bg-danger{% else %}bg-primary{% endif %}"
+                 style="width: {{ pr.completion_percent }}%"></div>
+          </div>
+          <span class="small text-muted">{{ pr.completion_percent }}%</span>
+          <span class="badge badge-{{ pr.status }} text-white">{{ pr.get_status_display }}</span>
+        </div>
+      </div>
+      <!-- Task list -->
+      <div class="mt-2">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Task</th><th>Status</th><th>Due</th><th>Owner</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tr in pr.task_runs.all %}
+            <tr {% if tr.is_overdue %}class="overdue-row"{% endif %}>
+              <td>{{ tr.task_template.name }}</td>
+              <td><span class="badge badge-{{ tr.status }} text-white">{{ tr.get_status_display }}</span></td>
+              <td>
+                {{ tr.effective_due_date }}
+                {% if tr.due_date_override %}<i class="bi bi-pencil-fill text-warning" title="Overridden"></i>{% endif %}
+                {% if tr.is_overdue %}<i class="bi bi-exclamation-triangle-fill text-danger"></i>{% endif %}
+              </td>
+              <td>{{ tr.owner_user.username|default:"—" }}</td>
+              <td>
+                <a href="{% url 'task_detail' tr.id %}" class="btn btn-xs btn-sm btn-outline-primary py-0">
+                  <i class="bi bi-pencil-square"></i>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted">No tasks.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="alert alert-secondary">No processes found for this cycle.</div>
+{% endfor %}
+
+{% else %}
+<div class="alert alert-secondary mt-4">
+  <i class="bi bi-calendar-x"></i> No active cycle at the moment.
+</div>
+{% endif %}
+{% endblock %}

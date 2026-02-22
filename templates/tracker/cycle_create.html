@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}New Cycle – Close Tracker{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h2 class="mb-3"><i class="bi bi-plus-circle text-primary"></i> Create Close Cycle</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Period <span class="text-danger">*</span></label>
+            <input type="text" name="period" class="form-control" placeholder="YYYY-MM (e.g. 2026-03)" required
+                   pattern="\d{4}-\d{2}">
+            <div class="form-text">Format: YYYY-MM</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Final Deadline <span class="text-danger">*</span></label>
+            <input type="date" name="final_deadline" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Template Version <span class="text-danger">*</span></label>
+            <select name="template_version" class="form-select" required>
+              <option value="">-- Select a published template version --</option>
+              {% for v in published_versions %}
+              <option value="{{ v.id }}">{{ v }} (published {{ v.published_at|date:"Y-m-d" }})</option>
+              {% empty %}
+              <option disabled>No published versions available</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg"></i> Create & Generate Runs
+            </button>
+            <a href="{% url 'cycle_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="alert alert-info mt-3">
+      <i class="bi bi-info-circle"></i>
+      Creating a cycle will generate ProcessRun and TaskRun entries for <strong>all 9 countries</strong>.
+      Due dates are calculated as <code>final_deadline + offset</code> from the template.
+    </div>
+  </div>
+</div>
+{% endblock %}

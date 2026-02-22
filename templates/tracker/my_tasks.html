@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My Tasks – Close Tracker{% endblock %}
+{% block nav_my_tasks %}active{% endblock %}
+
+{% block content %}
+<h2 class="mb-3"><i class="bi bi-list-check text-primary"></i> My Tasks</h2>
+
+{% if task_runs %}
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Country</th>
+          <th>Process</th>
+          <th>Task</th>
+          <th>Status</th>
+          <th>Effective Due</th>
+          <th>Quick Update</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="task-list">
+        {% for tr in task_runs %}
+        {% include "tracker/partials/task_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-success mt-4">
+  <i class="bi bi-check-circle-fill"></i> No open tasks assigned to you. All done!
+</div>
+{% endif %}
+{% endblock %}

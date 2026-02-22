@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}HQ Dashboard – Close Tracker{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2><i class="bi bi-globe2 text-primary"></i> HQ Dashboard</h2>
+  {% if active_cycle %}
+  <div>
+    <a href="{% url 'export_csv' active_cycle.id %}" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-download"></i> Export CSV
+    </a>
+    <a href="{% url 'cycle_create' %}" class="btn btn-sm btn-primary ms-2">
+      <i class="bi bi-plus-circle"></i> New Cycle
+    </a>
+  </div>
+  {% else %}
+  <a href="{% url 'cycle_create' %}" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-circle"></i> New Cycle
+  </a>
+  {% endif %}
+</div>
+
+{% if active_cycle %}
+<div class="alert alert-info d-flex align-items-center gap-2">
+  <i class="bi bi-info-circle-fill"></i>
+  <div>
+    Active cycle: <strong>{{ active_cycle.period }}</strong> &mdash;
+    Final deadline: <strong>{{ active_cycle.final_deadline }}</strong> &mdash;
+    Template: {{ active_cycle.template_version }}
+  </div>
+</div>
+
+<!-- HEATMAP -->
+<div class="card mb-4">
+  <div class="card-header fw-semibold">Country x Macro Heatmap</div>
+  <div class="card-body p-2 overflow-auto">
+    <table class="table table-sm table-bordered align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Country</th>
+          {% for mn in macro_names %}
+          <th class="text-center">{{ mn }}</th>
+          {% endfor %}
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in heatmap %}
+        <tr>
+          <td class="fw-semibold">{{ row.country.code }}<br><span class="text-muted small">{{ row.country.name }}</span></td>
+          {% for cell in row.macros %}
+          <td class="text-center">
+            <span class="heatmap-cell heatmap-{{ cell.status }}">{{ cell.status|default:"—" }}</span>
+          </td>
+          {% endfor %}
+          <td>
+            <a href="{% url 'cycle_country_detail' active_cycle.id row.country.code %}" class="btn btn-xs btn-sm btn-outline-secondary py-0">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Overdue -->
+  <div class="col-lg-6">
+    <div class="card border-warning">
+      <div class="card-header bg-warning text-dark fw-semibold">
+        <i class="bi bi-exclamation-triangle-fill"></i> Overdue Tasks ({{ overdue_tasks|length }})
+      </div>
+      <div class="card-body p-0">
+        {% if overdue_tasks %}
+        <table class="table table-sm table-hover mb-0">
+          <thead><tr><th>Country</th><th>Task</th><th>Due</th><th>Owner</th></tr></thead>
+          <tbody>
+            {% for tr in overdue_tasks %}
+            <tr class="overdue-row">
+              <td>{{ tr.process_run.country.code }}</td>
+              <td><a href="{% url 'task_detail' tr.id %}">{{ tr.task_template.name }}</a></td>
+              <td>{{ tr.effective_due_date }}</td>
+              <td>{{ tr.owner_user.username|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted p-3 mb-0">No overdue tasks.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Blocked -->
+  <div class="col-lg-6">
+    <div class="card border-danger">
+      <div class="card-header bg-danger text-white fw-semibold">
+        <i class="bi bi-ban-fill"></i> Blocked Tasks ({{ blocked_tasks|length }})
+      </div>
+      <div class="card-body p-0">
+        {% if blocked_tasks %}
+        <table class="table table-sm table-hover mb-0">
+          <thead><tr><th>Country</th><th>Task</th><th>Owner</th></tr></thead>
+          <tbody>
+            {% for tr in blocked_tasks %}
+            <tr>
+              <td>{{ tr.process_run.country.code }}</td>
+              <td><a href="{% url 'task_detail' tr.id %}">{{ tr.task_template.name }}</a></td>
+              <td>{{ tr.owner_user.username|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted p-3 mb-0">No blocked tasks.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="alert alert-secondary mt-4">
+  <i class="bi bi-calendar-x"></i> No active cycle found.
+  <a href="{% url 'cycle_create' %}">Create a new cycle</a>.
+</div>
+{% endif %}
+
+<!-- Recent cycles -->
+<div class="card mt-4">
+  <div class="card-header fw-semibold">Recent Cycles</div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Period</th><th>Deadline</th><th>Template</th><th>Status</th><th>Created</th></tr>
+      </thead>
+      <tbody>
+        {% for c in cycles %}
+        <tr>
+          <td><strong>{{ c.period }}</strong></td>
+          <td>{{ c.final_deadline }}</td>
+          <td>{{ c.template_version }}</td>
+          <td><span class="badge bg-secondary">{{ c.status }}</span></td>
+          <td>{{ c.created_at|date:"Y-m-d" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted text-center">No cycles yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

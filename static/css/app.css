@@ -1,0 +1,47 @@
+/* Month-End Close Tracker – custom styles */
+
+/* Status badges */
+.badge-NOT_STARTED { background-color: #6c757d; }
+.badge-IN_PROGRESS { background-color: #0d6efd; }
+.badge-DONE        { background-color: #198754; }
+.badge-BLOCKED     { background-color: #dc3545; }
+.badge-NA          { background-color: #adb5bd; color: #212529; }
+.badge-NONE        { background-color: #f8f9fa; color: #212529; border: 1px solid #dee2e6; }
+
+/* Heatmap cells */
+.heatmap-cell {
+    min-width: 80px;
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.heatmap-NOT_STARTED { background: #e9ecef; color: #495057; }
+.heatmap-IN_PROGRESS { background: #cfe2ff; color: #084298; }
+.heatmap-DONE        { background: #d1e7dd; color: #0f5132; }
+.heatmap-BLOCKED     { background: #f8d7da; color: #842029; }
+.heatmap-NONE        { background: #f8f9fa; color: #adb5bd; }
+
+/* Overdue highlight */
+.overdue-row { background-color: #fff3cd; }
+
+/* Progress bar */
+.progress { height: 8px; }
+
+/* Sidebar nav */
+.sidebar { min-height: calc(100vh - 56px); background: #212529; }
+.sidebar .nav-link { color: #adb5bd; }
+.sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; }
+.sidebar .nav-link i { width: 1.2rem; }
+
+/* HTMX loading indicator */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline-block; }
+
+/* Task row inline update */
+.task-status-form select { max-width: 160px; }
+
+@media (max-width: 768px) {
+    .heatmap-cell { min-width: 60px; font-size: 0.65rem; }
+}
