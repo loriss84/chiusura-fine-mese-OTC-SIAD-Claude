@@ -25,12 +25,41 @@ with atomic **Tasks**. Monthly **Close Cycles** are created from a published
 
 ## Local Development Setup
 
-### Prerequisites
+Two paths depending on your OS and setup:
 
-- Python 3.12
+---
+
+### ⚡ Quick Start – Windows / SQLite (no database install needed)
+
+> Works with **any Python version** (3.11, 3.12, 3.13, 3.14+). No PostgreSQL required.
+
+```powershell
+git clone <repo-url>
+cd chiusura-fine-mese-OTC-SIAD-Claude
+
+python -m venv .venv
+.venv\Scripts\activate
+
+# Install lightweight deps (no psycopg2):
+pip install -r requirements-dev-windows.txt
+
+# Configure – SQLite is the default, nothing to change:
+copy .env.example .env
+```
+
+The default `.env` already uses `DATABASE_URL=sqlite:///db.sqlite3`.
+Skip straight to [step 4 – migrations](#4-run-migrations).
+
+---
+
+### Full Setup – Linux / macOS / Windows with PostgreSQL
+
+#### Prerequisites
+
+- Python 3.12 (recommended; psycopg2-binary has no wheel for Python 3.14 yet)
 - PostgreSQL (any recent version, installed natively)
 
-### 1. Clone & virtual environment
+#### 1. Clone & virtual environment
 
 ```bash
 git clone <repo-url>
@@ -38,10 +67,10 @@ cd chiusura-fine-mese-OTC-SIAD-Claude
 
 python3.12 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt  # includes psycopg2-binary
 ```
 
-### 2. Create PostgreSQL database
+#### 2. Create PostgreSQL database
 
 ```bash
 # As the postgres superuser:
@@ -52,15 +81,12 @@ psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE closetracker_db TO closetr
 psql -U postgres -c "ALTER USER closetracker CREATEDB;"
 ```
 
-### 3. Configure environment
+#### 3. Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env and set:
-#   SECRET_KEY=<random-long-string>
+# Edit .env – uncomment the PostgreSQL line and comment out the SQLite one:
 #   DATABASE_URL=postgres://closetracker:closetracker@localhost:5432/closetracker_db
-#   DEBUG=True
-#   ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
 ### 4. Run migrations

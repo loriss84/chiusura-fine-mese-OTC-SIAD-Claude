@@ -64,25 +64,43 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Database – parse DATABASE_URL
-_db_url = os.environ.get(
-    "DATABASE_URL",
-    "postgres://closetracker:closetracker@localhost:5432/closetracker_db",
-)
-_m = _re.match(r"postgres(?:ql)?://([^:]+):([^@]*)@([^:]+):(\d+)/(.+)", _db_url)
-if _m:
+# Database – auto-detect engine from DATABASE_URL
+# Supports:
+#   sqlite:///path/to/db.sqlite3          → SQLite (Windows dev, no install)
+#   postgres://user:pass@host:port/dbname → PostgreSQL (production)
+# If DATABASE_URL is not set, defaults to SQLite in the project root.
+_db_url = os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3")
+
+_pg = _re.match(r"postgres(?:ql)?://([^:]+):([^@]*)@([^:]+):(\d+)/(.+)", _db_url)
+_sq = _re.match(r"sqlite:///(.+)", _db_url)
+
+if _pg:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": _m.group(5),
-            "USER": _m.group(1),
-            "PASSWORD": _m.group(2),
-            "HOST": _m.group(3),
-            "PORT": _m.group(4),
+            "NAME": _pg.group(5),
+            "USER": _pg.group(1),
+            "PASSWORD": _pg.group(2),
+            "HOST": _pg.group(3),
+            "PORT": _pg.group(4),
+        }
+    }
+elif _sq:
+    _sqlite_path = _sq.group(1)
+    # Resolve relative paths against BASE_DIR
+    if not os.path.isabs(_sqlite_path):
+        _sqlite_path = BASE_DIR / _sqlite_path
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": _sqlite_path,
         }
     }
 else:
-    raise ValueError(f"Invalid DATABASE_URL: {_db_url}")
+    raise ValueError(
+        f"Unsupported DATABASE_URL: {_db_url!r}\n"
+        "Use 'sqlite:///db.sqlite3' or 'postgres://user:pass@host:port/dbname'"
+    )
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
